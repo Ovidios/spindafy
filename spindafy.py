@@ -101,13 +101,16 @@ class SpindaConfig:
         return img
 
     def get_difference(self, target):
-        target_grayscale = target.convert("L")
+        result = self.render_pattern(only_pattern=True, crop=True).convert("RGB")
+        diff = ImageChops.difference(target, result)
+
         total_diff = 0
-        for x in range(target_grayscale.size[0]):
-            for y in range(target_grayscale.size[1]):
-                result = 1 if self.is_spot((x, y)) else 0
-                pixel = target_grayscale.getpixel((x, y))
-                total_diff += abs(pixel - result)
+        for x in range(result.size[0]):
+            for y in range(result.size[1]):
+                pix = diff.getpixel((x, y))
+                val = (pix[0] + pix[1] + pix[2])/3
+                total_diff += val
+
         return total_diff
 
 if __name__ == "__main__":

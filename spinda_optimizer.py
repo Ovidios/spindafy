@@ -70,5 +70,5 @@ def render_to_spinda(filename, pop, n_generations, include = []) -> Image:
 
 if __name__ == "__main__":
     #evolve(Image.open("res/example_target.png"), 250, 50)
-    (img, best) = render_to_spinda("badapple/frame6562.png", 250, 25)
+    (img, best) = render_to_spinda("badapple/frame6562.png", 10, 10)
     img.resize((1000, 1000), Image.Resampling.NEAREST).show()
