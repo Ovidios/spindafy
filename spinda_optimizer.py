@@ -2,7 +2,7 @@ from PIL import Image
 from spindafy import SpindaConfig
 from random import choice, random, randint
 import multiprocessing
-from itertools import repeat
+from itertools import repeat, starmap
 
 try:
     cpus = multiprocessing.cpu_count()
@@ -38,6 +38,7 @@ def get_pop_fitness(spinda, target):
 def evolve_step(target, population):
     pool = multiprocessing.Pool(processes=cpus)
     pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
+    #pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
     pop_fitness = sorted(pop_fitness, key=lambda t: t[1])
     (best_spinda, best_fitness) = pop_fitness[0]
     pop = len(population)

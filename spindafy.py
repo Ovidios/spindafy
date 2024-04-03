@@ -6,10 +6,10 @@ class SpindaConfig:
     sprite_base = Image.open("res/spinda_base.png")
     sprite_mask = Image.open("res/spinda_mask.png")
     spot_masks = [
-        Image.open("res/spots/spot_1.png"),
-        Image.open("res/spots/spot_2.png"),
-        Image.open("res/spots/spot_3.png"),
-        Image.open("res/spots/spot_4.png")
+        np.array(Image.open("res/spots/spot_1.png")),
+        np.array(Image.open("res/spots/spot_2.png")),
+        np.array(Image.open("res/spots/spot_3.png")),
+        np.array(Image.open("res/spots/spot_4.png"))
     ]
     spot_offsets = [
         (8, 6),
@@ -55,27 +55,27 @@ class SpindaConfig:
         mask = self.spot_masks[n]
 
         # if the position lies outside the spot image: return false
-        if pos_adjusted[0] < 0 or pos_adjusted[1] < 0 or pos_adjusted[0] >= mask.width or pos_adjusted[1] >= mask.height:
+        if pos_adjusted[0] < 0 or pos_adjusted[1] < 0 or pos_adjusted[0] >= len(mask[0]) or pos_adjusted[1] >= len(mask):
             return False
         
-        # else: return true if the corresponding pixel is white
-        mask_pixel = mask.getpixel(pos_adjusted)
-        if mask_pixel == (255, 255, 255, 255):
+        # else: return true if the corresponding pixel is opaque
+        mask_pixel = mask[pos_adjusted[1]][pos_adjusted[0]][3]
+        if mask_pixel == 255:
             return True
         return False
 
     def is_spot(self, pos):
-        for n in range(4):
-            if self.is_spot_n(pos, n):
-                return True
+        if self.is_spot_n(pos, 0): return True
+        if self.is_spot_n(pos, 1): return True
+        if self.is_spot_n(pos, 2): return True
+        if self.is_spot_n(pos, 3): return True
         return False
 
     def render_pattern(self, only_pattern = False, crop = False):
         size = self.sprite_base.size
-        img = Image.new("RGBA", size)
+        img = self.sprite_base.copy()
 
         mask_arr = np.asarray(self.sprite_mask)
-        base_arr = np.asarray(self.sprite_base)
 
         draw = ImageDraw.ImageDraw(img)
 
@@ -83,18 +83,14 @@ class SpindaConfig:
             for y in range(size[1]):
                 # apply mask
                 mask_pixel = tuple(mask_arr[y][x])
-                base_pixel = tuple(base_arr[y][x])
 
                 if self.is_spot((x, y)) and mask_pixel[3] != 0:
                     if only_pattern:
                         draw.point((x, y), (255, 255, 255, 255))
                     else:
                         draw.point((x, y), mask_pixel)
-                else:
-                    if only_pattern:
+                elif only_pattern:
                         draw.point((x, y), (0, 0, 0, 255))
-                    else:
-                        draw.point((x, y), base_pixel)
 
         if crop: img = img.crop((17, 15, 52, 48))
 
@@ -115,4 +111,5 @@ class SpindaConfig:
 
 if __name__ == "__main__":
     spin = SpindaConfig.from_personality(0x7a397866)
-    print(hex(spin.get_personality()))
+    spin.render_pattern().show()
+    #print(hex(spin.get_personality()))

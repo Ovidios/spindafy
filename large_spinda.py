@@ -29,13 +29,13 @@ def to_spindas(filename, pop, n_generations):
                     (x * 25, y * 20),
                     spinmage
                 )
-                pids[y] += [best_spinda.get_personality]
+                pids[y] += [best_spinda.get_personality()]
 
-        return img
+        return (img, pids)
     
 if __name__ == "__main__":
-    (img, pids) = to_spindas("res/test_large.png", 250, 25)
+    (img, pids) = to_spindas("res/test_large.png", 100, 10)
     img.resize((img.size[0]*10, img.size[1]*10), Image.Resampling.NEAREST).show()
     img.save("test_large.png")
-    with open("test_pids.json", "w") as f:
+    with open("test_large.json", "w") as f:
         json.dump(pids, f)
