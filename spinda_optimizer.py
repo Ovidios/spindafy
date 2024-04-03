@@ -1,8 +1,13 @@
 from PIL import Image
 from spindafy import SpindaConfig
 from random import choice, random, randint
-import multiprocessing
+import multiprocessing, numpy as np
 from itertools import repeat, starmap
+
+PREDEFINED = {
+    "ALL_WHITE": 0x393d9888,
+    "ALL_BLACK": 0xff200000
+}
 
 try:
     cpus = multiprocessing.cpu_count()
@@ -50,6 +55,16 @@ def evolve_step(target, population):
     return (new_pop, best_fitness, best_spinda)
 
 def evolve(target, pop, n_generations, include = []):
+    # check for predefined spinda patterns!
+    if np.all(np.greater_equal(target, 128)):
+        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
+        print(f"Found predefined Spinda: 'ALL_WHITE': {hex(best_spinda.get_personality())}")
+        return (best_spinda.get_difference(target), best_spinda)
+    if np.all(np.less_equal(target, [127, 127, 255])):
+        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
+        print(f"Found predefined Spinda: 'ALL_BLACK': {hex(best_spinda.get_personality())}")
+        return (best_spinda.get_difference(target), best_spinda)
+        
     # create a population of spinda
     population = [SpindaConfig.random() for _ in range(pop - len(include))]
     # insert prepopulation
@@ -70,5 +85,5 @@ def render_to_spinda(filename, pop, n_generations, include = []) -> Image:
         return (best_spinda.render_pattern(), best_spinda)
 
 if __name__ == "__main__":
-    (img, best) = render_to_spinda("badapple/frame6562.png", 250, 25)
+    (img, best) = render_to_spinda("badapple/frame6476.png", 250, 25)
     img.resize((1000, 1000), Image.Resampling.NEAREST).show()
