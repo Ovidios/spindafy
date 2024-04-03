@@ -25,7 +25,7 @@ if __name__ == '__main__':
             continue
 
         with Image.open(filename) as input_image:
-            target = input_image
+            target = input_image.convert("RGB")
 
             (fitness, spinda) = evolve(target, 250, 25)
             spinmage = spinda.render_pattern()
