@@ -1,10 +1,12 @@
 from PIL import Image
 from spinda_optimizer import evolve
-import json
+import json, PIL.ImageOps
 
 # this is definitely not the best way of doing this!
-def to_spindas(filename, pop, n_generations):
+def to_spindas(filename, pop, n_generations, invert = False):
     with Image.open(filename) as target:
+        if invert: target = PIL.ImageOps.invert(target)
+
         num_x = int((target.size[0]+10)/25)
         num_y = int((target.size[1]+13)/20)
 
@@ -34,8 +36,8 @@ def to_spindas(filename, pop, n_generations):
         return (img, pids)
     
 if __name__ == "__main__":
-    (img, pids) = to_spindas("res/test_large.png", 100, 10)
+    (img, pids) = to_spindas("doom/.5_1b_i_c.png", 100, 10)
     img.resize((img.size[0]*10, img.size[1]*10), Image.Resampling.NEAREST).show()
-    img.save("test_large.png")
-    with open("test_large.json", "w") as f:
+    img.save("doom/.5_1b_i_c_result.png")
+    with open("doom/.5_1b_i_c_result.json", "w") as f:
         json.dump(pids, f)
