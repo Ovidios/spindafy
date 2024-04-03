@@ -7,3 +7,4 @@ It consists of the following files:
 - ``spinda_anim.py`` just runs the genetic algorithm on a number of files in a given directory and writes the results to a different directory (both given as command line arguments.) See [this YouTube video](https://www.youtube.com/watch?v=ZzsBIfA6iog) for an example.
 - ``large_spinda.py`` implements a super naive and *very* slow spinda mosaic generator. Example:
   ![a mosaic of spinda forming a yin and yang symbol](res/test_large_result.png)
+- ``large_spinda_anim.py`` is the mosaic equivalent of ``spinda_anim.py``.
