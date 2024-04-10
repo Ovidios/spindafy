@@ -11,6 +11,9 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("input_directory")
     parser.add_argument("output_directory")
+    parser.add_argument("skip", type=int, default=0, nargs="?")
+    parser.add_argument("--skip-even", action="store_true")
+    parser.add_argument("--skip-odd", action="store_true")
 
     args = parser.parse_args()
 
@@ -24,7 +27,19 @@ if __name__ == '__main__':
     for n, filename in enumerate(inputs):
         print(f"STARTING FRAME #{n:0>4}! — ({n/len(inputs) * 100}%)")
 
-        if len(glob(args.output_directory + f"/frame{n:0>4}_*")) > 0:
+        if n < args.skip:
+            print(f"skipping first {args.skip} frames!")
+            continue
+
+        if n%2 == 0 and args.skip_even:
+            print(f"skipping even frames!")
+            continue
+
+        if n%2 != 0 and args.skip_odd:
+            print(f"skipping odd frames!")
+            continue
+
+        if len(glob(args.output_directory + f"/frame{n:0>4}*")) > 0:
             print("frame already found! skipping.")
             continue
 
