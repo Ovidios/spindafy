@@ -38,6 +38,14 @@ class SpindaConfig:
         return self
     
     @staticmethod
+    def base_sprite_active_size(head_only:bool = False):
+        sprite = SpindaConfig.sprite_base
+        if head_only:
+            sprite = sprite.crop((17, 15, 52, 48))
+        bbox = sprite.getbbox()
+        return (bbox[2] - bbox[0], bbox[3] - bbox[1])
+    
+    @staticmethod
     def random():
         return SpindaConfig.from_personality(randint(0, 0x100000000))
 
