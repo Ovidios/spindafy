@@ -83,16 +83,15 @@ class SpindaConfig:
         return img
 
     def get_difference(self, target):
+        # Validate the mode will match the type used in the next step
+        if target.mode != "RGB":
+            target = target.convert("RGB")
+        # Compare the resulting images by the total average pixel difference
         result = self.render_pattern(only_pattern=True, crop=True).convert("RGB")
         diff = ImageChops.difference(target, result)
-
         total_diff = 0
-        for x in range(result.size[0]):
-            for y in range(result.size[1]):
-                pix = diff.getpixel((x, y))
-                val = (pix[0] + pix[1] + pix[2])/3
-                total_diff += val
-
+        for n, (r, g, b) in diff.getcolors():  # gives a list of counter and RGB values in the image
+            total_diff += n*((r+g+b)/3)
         return total_diff
 
 if __name__ == "__main__":
