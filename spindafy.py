@@ -6,10 +6,10 @@ class SpindaConfig:
     sprite_base = Image.open("res/spinda_base.png")
     sprite_mask = Image.open("res/spinda_mask.png")
     spot_masks = [
-        np.array(Image.open("res/spots/spot_1.png")),
-        np.array(Image.open("res/spots/spot_2.png")),
-        np.array(Image.open("res/spots/spot_3.png")),
-        np.array(Image.open("res/spots/spot_4.png"))
+        Image.open("res/spots/spot_1.png"),
+        Image.open("res/spots/spot_2.png"),
+        Image.open("res/spots/spot_3.png"),
+        Image.open("res/spots/spot_4.png")
     ]
     spot_offsets = [
         (8, 6),
@@ -47,52 +47,38 @@ class SpindaConfig:
             pers = pers | (spot[0] << i*8) | (spot[1] << i*8+4)
         return pers
 
-    def is_spot_n(self, pos, n):
-        pos_adjusted = (
-            pos[0] - self.spot_offsets[n][0] - self.spots[n][0],
-            pos[1] - self.spot_offsets[n][1] - self.spots[n][1]
-        )
-        mask = self.spot_masks[n]
-
-        # if the position lies outside the spot image: return false
-        if pos_adjusted[0] < 0 or pos_adjusted[1] < 0 or pos_adjusted[0] >= len(mask[0]) or pos_adjusted[1] >= len(mask):
-            return False
-        
-        # else: return true if the corresponding pixel is opaque
-        mask_pixel = mask[pos_adjusted[1]][pos_adjusted[0]][3]
-        if mask_pixel == 255:
-            return True
-        return False
-
-    def is_spot(self, pos):
-        if self.is_spot_n(pos, 0): return True
-        if self.is_spot_n(pos, 1): return True
-        if self.is_spot_n(pos, 2): return True
-        if self.is_spot_n(pos, 3): return True
-        return False
-
     def render_pattern(self, only_pattern = False, crop = False):
+        # Prepare a result image with the same size as base and bg either black or transparent
         size = self.sprite_base.size
-        img = self.sprite_base.copy()
+        img = Image.new('RGBA', size, (0, 0, 0, 255 if only_pattern else 0))
 
-        mask_arr = np.asarray(self.sprite_mask)
+        # When wanting an actual spinda, start by pasting in the base sprite
+        if not only_pattern:
+            img.paste(self.sprite_base, (0, 0))
 
-        draw = ImageDraw.ImageDraw(img)
+        for index in range(4):
+            # Calculate the top-left coordinate for the spot image
+            position = (self.spot_offsets[index][0] + self.spots[index][0],
+                        self.spot_offsets[index][1] + self.spots[index][1])
 
-        for x in range(size[0]):
-            for y in range(size[1]):
-                # apply mask
-                mask_pixel = tuple(mask_arr[y][x])
+            # Create a full-size image for the full spot at the desired position,
+            #   as composite operation requires same-sized images
+            spot_full = Image.new('RGBA', size, (0, 0, 0, 0))
+            spot_full.paste(self.spot_masks[index], position, mask=self.spot_masks[index])
 
-                if self.is_spot((x, y)) and mask_pixel[3] != 0:
-                    if only_pattern:
-                        draw.point((x, y), (255, 255, 255, 255))
-                    else:
-                        draw.point((x, y), mask_pixel)
-                elif only_pattern:
-                        draw.point((x, y), (0, 0, 0, 255))
+            # Create temporary mask by combining mask and spot mask
+            temp_mask = Image.new('RGBA', size, (0, 0, 0, 0))
+            temp_mask.paste(self.sprite_mask, (0, 0), mask=spot_full)
 
-        if crop: img = img.crop((17, 15, 52, 48))
+            if only_pattern:
+                # Composite the white spot onto the masked area
+                temp_mask = Image.composite(spot_full, temp_mask, temp_mask)
+
+            # Composite the new mask with the current result
+            img = Image.composite(temp_mask, img, temp_mask)
+
+        if crop:
+            img = img.crop((17, 15, 52, 48))
 
         return img
 
