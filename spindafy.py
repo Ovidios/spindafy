@@ -47,30 +47,6 @@ class SpindaConfig:
             pers = pers | (spot[0] << i*8) | (spot[1] << i*8+4)
         return pers
 
-    def is_spot_n(self, pos, n):
-        pos_adjusted = (
-            pos[0] - self.spot_offsets[n][0] - self.spots[n][0],
-            pos[1] - self.spot_offsets[n][1] - self.spots[n][1]
-        )
-        mask = self.spot_masks[n]
-
-        # if the position lies outside the spot image: return false
-        if pos_adjusted[0] < 0 or pos_adjusted[1] < 0 or pos_adjusted[0] >= len(mask[0]) or pos_adjusted[1] >= len(mask):
-            return False
-        
-        # else: return true if the corresponding pixel is opaque
-        mask_pixel = mask[pos_adjusted[1]][pos_adjusted[0]][3]
-        if mask_pixel == 255:
-            return True
-        return False
-
-    def is_spot(self, pos):
-        if self.is_spot_n(pos, 0): return True
-        if self.is_spot_n(pos, 1): return True
-        if self.is_spot_n(pos, 2): return True
-        if self.is_spot_n(pos, 3): return True
-        return False
-
     def render_pattern(self, only_pattern = False, crop = False):
         # Prepare a result image with the same size as base and bg either black or transparent
         size = self.sprite_base.size
