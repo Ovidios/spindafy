@@ -8,12 +8,12 @@ PREDEFINED = {
 }
 
 #ordering of pixels are from to left to bottom right
-#px values are used when the pixel value is equal to or the closest to below it for the given key
+#px values are used when the pixel value is equal to or the closest to above it for the given key
 PX_MAPS = (
-    {0: 0xFE, 100:0xBF, 200: 0x00},
-    {0: 0xF0, 30:0xA0, 15:0x0F, 200: 0x00},
-    {0: 0x9C, 100:0x75, 150: 0x88, 200: 0xF0},
-    {0: 0x87, 100:0x5F, 150: 0x7C, 200: 0xFF}
+    {0: 0xFE, 50:0xAF, 100:0xBF, 150:0x5F, 200:0x00},
+    {0: 0xF0, 15:0x0F, 30:0xA0, 100:0x60, 50:0xA1, 200:0x00},
+    {0: 0x9C, 50:0xC6, 100:0x75, 150:0x88, 200:0xF0},
+    {0: 0x88, 50:0xCC, 100:0x5F, 150:0x7C, 200:0xFF}
 )
 PX_MAPS_MAX_VAL = max([max(x.keys()) for x in PX_MAPS])
 PX_MAPS_MIN_VAL_NOT_ZERO = max([max([y for y in x.keys() if y > 0]) for x in PX_MAPS])
@@ -44,7 +44,7 @@ def px_array_find_best_spinda(target:Image):
     return SpindaConfig.from_personality(px_array_find_best_pid(target))
 
 if __name__ == "__main__":
-    with Image.open("res/test_large.png") as target:
+    with Image.open("res/bestboy.png") as target:
         spin = px_array_find_best_spinda(target)
         print(hex(spin.get_personality()))
         spin.render_pattern().show()
