@@ -2,6 +2,7 @@ from PIL import Image, ImageChops, ImageDraw
 from random import randint
 import numpy as np
 from numba import cuda
+import config
 
 sprite_base = Image.open("res/spinda_base.png")
 sprite_mask = Image.open("res/spinda_mask.png")
@@ -84,20 +85,29 @@ def get_difference(spinda, target):
         target = target.convert("RGB")
     # Compare the resulting images by the total average pixel difference
     result = render_pattern(spinda, only_pattern=True, crop=True).convert("RGB")
-    """diff = ImageChops.difference(target, result)
+    diff = ImageChops.difference(target, result)
     total_diff = 0
     for n, (r, g, b) in diff.getcolors():  # gives a list of counter and RGB values in the image
-        total_diff += n*((r+g+b)/3)
-    return total_diff"""
-    tdata = np.array(target.getdata())
-    rdata = np.array(result.getdata())
-    length = len(tdata)
-    diffs = np.zeros(length, dtype=np.int32)
-    tdata = cuda.to_device(tdata)
-    rdata = cuda.to_device(rdata)
-    diffs = cuda.to_device(diffs)
-    get_difference_direct[128, 1024](tdata, rdata, diffs)
-    return sum_reduce(diffs)
+        total_diff += n * ((r + g + b) / 3)
+    return total_diff
+
+
+def get_difference_gpu(spindas, target):
+    # Compare the resulting images by the total average pixel difference
+    difference_tuples = []
+    for spinda in spindas:
+        result = render_pattern(spinda, only_pattern=True, crop=True).convert("RGB")
+        tdata = np.array(target.getdata())
+        rdata = np.array(result.getdata())
+        length = len(tdata)
+        diffs = np.zeros(length, dtype=np.int32)
+        tdata = cuda.to_device(tdata)
+        rdata = cuda.to_device(rdata)
+        diffs = cuda.to_device(diffs)
+        get_difference_direct[128, 1024](tdata, rdata, diffs)
+        difference_tuples.append((spinda, sum_reduce(diffs)))
+    return difference_tuples
+
 
 @cuda.reduce
 def sum_reduce(a, b):

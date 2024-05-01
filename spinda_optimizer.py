@@ -1,4 +1,5 @@
 from spindafy import *
+import config
 from random import choice, random, randint
 import multiprocessing, numpy as np
 from itertools import repeat, starmap
@@ -40,12 +41,16 @@ def get_pop_fitness(spinda, target):
     return (spinda, get_difference(spinda, target))
 
 def evolve_step(target, population):
-    pool = multiprocessing.Pool(processes=cpus)
-    pop_fitness = []
     # Convert now, since GPUs don't support anything in PIL/Pillow
     if target.mode != "RGB":
         target = target.convert("RGB")
-    pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
+    if config.USE_GPU:
+        # From my testing, using one CPU makes it faster. I'm guessing the time spent copying memory
+        # around is too slow in comparison to the gains from calculating Spinda result images.
+        pop_fitness = get_difference_gpu(population, target)
+    else:
+        pool = multiprocessing.Pool(processes=cpus)
+        pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
     #pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
     pop_fitness = sorted(pop_fitness, key=lambda t: t[1])
     (best_spinda, best_fitness) = pop_fitness[0]
