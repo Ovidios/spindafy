@@ -36,7 +36,7 @@ def to_spindas(filename, pop, n_generations, invert=False):
             tasks = []
             for y in range(num_y):
                 for x in range(num_x):
-                    print(f"Subimage {x}|{y}")
+                    print(f"Subimage {x+1}|{y+1}")
                     sub_target = target.crop((
                         x * 25, y * 20,
                         x * 25 + 35,
@@ -55,8 +55,8 @@ def to_spindas(filename, pop, n_generations, invert=False):
     return img, results
     
 if __name__ == "__main__":
-    (img, pids) = to_spindas("res/doom.png", 100, 10, True)
+    (img, pids) = to_spindas("res/test/image.png", 100, 10)
     img.resize((img.size[0]*10, img.size[1]*10), Image.Resampling.NEAREST).show()
-    img.save("res/test_large_result.png")
-    with open("res/test.json", "w") as f:
+    img.save("res/test/test_result.png")
+    with open("res/test/test.json", "w") as f:
         json.dump(pids, f)

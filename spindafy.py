@@ -94,8 +94,13 @@ class SpindaConfig:
         # Compare the resulting images by the total average pixel difference
         result = self.render_pattern(spot_masks, sprite_mask, only_pattern=True, crop=True).convert("RGB")
         diff = ImageChops.difference(target, result)
+
         total_diff = 0
-        for n, (r, g, b) in diff.getcolors():  # gives a list of counter and RGB values in the image
+        color_diff = diff.getcolors()
+        if color_diff is None:
+            return total_diff
+        
+        for n, (r, g, b) in color_diff:  # gives a list of counter and RGB values in the image
             total_diff += n*((r+g+b)/3)
         return total_diff
 
