@@ -1,23 +1,20 @@
 from PIL import Image
-from spindafy import SpindaConfig
+from spindafy import SpindaConfig as Spinda
 from random import choice, random, randint
-import multiprocessing, numpy as np
-from itertools import repeat, starmap
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import numpy as np
+from timeify import timeify
+import copy
 
 PREDEFINED = {
     "ALL_WHITE": 0x393d9888,
     "ALL_BLACK": 0xff200000
 }
 
-try:
-    cpus = multiprocessing.cpu_count()
-except NotImplementedError:
-    cpus = 2   # arbitrary default
-
 def create_offspring(parent1, parent2):
     MUTATION_PROB = 0.2
     
-    offspring = SpindaConfig()
+    offspring = Spinda()
     
     for n in range(4):
         # recombination
@@ -37,37 +34,59 @@ def generate_parents(pop_fitness):
         parent_2 = pop_fitness[int(random() ** 2 * pop)]
     return (parent_1[0], parent_2[0])
 
-def get_pop_fitness(spinda, target):
-    return (spinda, spinda.get_difference(target))
+# @timeify
+def get_pop_fitness(spinda, target, spot_masks, sprite_mask):
+    # deep copy the masks to make them thread safe
+    spot_masks_local = copy.deepcopy(spot_masks)
+    sprite_mask_local = copy.deepcopy(sprite_mask)
+    return (spinda, spinda.get_difference(target, spot_masks_local, sprite_mask_local))
 
-def evolve_step(target, population):
-    pool = multiprocessing.Pool(processes=cpus)
-    pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
-    #pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
+# @timeify
+def evolve_step(target, population, elitism_count=2):
+    num_workers = len(population)
+
+    with ThreadPoolExecutor(max_workers=num_workers) as executor:
+        spot_masks = Spinda.spot_masks
+        sprite_mask = Spinda.sprite_mask
+        # Load the masks so they can be deep copied later
+        for img in spot_masks:
+            img.load()
+        sprite_mask.load()
+        # Submitting jobs to the thread pool and collecting futures
+        futures = [executor.submit(get_pop_fitness, pop, target, spot_masks, sprite_mask) for pop in population]
+        # Retrieving results as they are completed
+        pop_fitness = [future.result() for future in as_completed(futures)]
+
+    
+    # Sorting based on fitness
     pop_fitness = sorted(pop_fitness, key=lambda t: t[1])
     (best_spinda, best_fitness) = pop_fitness[0]
     pop = len(population)
 
-    new_pop = []
-    for _ in range(pop):
+    new_pop = [x[0] for x in pop_fitness[:elitism_count]]  # carry over the top elites
+
+    for _ in range(pop - elitism_count):
         (parent_1, parent_2) = generate_parents(pop_fitness)
         new_pop.append(create_offspring(parent_1, parent_2))
+
     return (new_pop, best_fitness, best_spinda)
 
+@timeify
 def evolve(target, pop, n_generations, include = []):
+
     # check for predefined spinda patterns!
     black_target = [127, 127, 127, 255] if target.mode == "RBGA" else 127
     if np.all(np.greater_equal(target, 128)):
-        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
+        best_spinda = Spinda.from_personality(PREDEFINED["ALL_WHITE"])
         print(f"Found predefined Spinda: 'ALL_WHITE': {hex(best_spinda.get_personality())}")
-        return (best_spinda.get_difference(target), best_spinda)
+        return (best_spinda.get_difference(target, Spinda.spot_masks, Spinda.sprite_mask), best_spinda)
     if np.all(np.less_equal(target, black_target)):
-        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
+        best_spinda = Spinda.from_personality(PREDEFINED["ALL_BLACK"])
         print(f"Found predefined Spinda: 'ALL_BLACK': {hex(best_spinda.get_personality())}")
-        return (best_spinda.get_difference(target), best_spinda)
+        return (best_spinda.get_difference(target, Spinda.spot_masks, Spinda.sprite_mask), best_spinda)
         
     # create a population of spinda
-    population = [SpindaConfig.random() for _ in range(pop - len(include))]
+    population = [Spinda.random() for _ in range(pop - len(include))]
     # insert prepopulation
     for spinda in include: population.append(spinda)
 
@@ -86,5 +105,5 @@ def render_to_spinda(filename, pop, n_generations, include = []) -> Image:
         return (best_spinda.render_pattern(), best_spinda)
 
 if __name__ == "__main__":
-    (img, best) = render_to_spinda("badapple/frame6476.png", 250, 25)
+    (img, best) = render_to_spinda("res/test_large.png", 250, 25)
     img.resize((1000, 1000), Image.Resampling.NEAREST).show()

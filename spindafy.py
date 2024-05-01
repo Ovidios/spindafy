@@ -1,6 +1,6 @@
-from PIL import Image, ImageChops, ImageDraw
+from PIL import Image, ImageChops
 from random import randint
-import numpy as np
+from timeify import timeify
 
 class SpindaConfig:
     sprite_base = Image.open("res/spinda_base.png")
@@ -47,11 +47,15 @@ class SpindaConfig:
             pers = pers | (spot[0] << i*8) | (spot[1] << i*8+4)
         return pers
 
-    def render_pattern(self, only_pattern = False, crop = False):
+    # @timeify
+    def render_pattern(self, spot_masks=None, sprite_mask=None, only_pattern = False, crop = False):
         # Prepare a result image with the same size as base and bg either black or transparent
         size = self.sprite_base.size
         img = Image.new('RGBA', size, (0, 0, 0, 255 if only_pattern else 0))
-
+        if spot_masks is None:
+            spot_masks = self.spot_masks
+        if sprite_mask is None:
+            sprite_mask = self.sprite_mask
         # When wanting an actual spinda, start by pasting in the base sprite
         if not only_pattern:
             img.paste(self.sprite_base, (0, 0))
@@ -64,11 +68,11 @@ class SpindaConfig:
             # Create a full-size image for the full spot at the desired position,
             #   as composite operation requires same-sized images
             spot_full = Image.new('RGBA', size, (0, 0, 0, 0))
-            spot_full.paste(self.spot_masks[index], position, mask=self.spot_masks[index])
+            spot_full.paste(spot_masks[index], position, mask=spot_masks[index])
 
             # Create temporary mask by combining mask and spot mask
             temp_mask = Image.new('RGBA', size, (0, 0, 0, 0))
-            temp_mask.paste(self.sprite_mask, (0, 0), mask=spot_full)
+            temp_mask.paste(sprite_mask, (0, 0), mask=spot_full)
 
             if only_pattern:
                 # Composite the white spot onto the masked area
@@ -82,12 +86,13 @@ class SpindaConfig:
 
         return img
 
-    def get_difference(self, target):
+    # @timeify
+    def get_difference(self, target, spot_masks, sprite_mask):
         # Validate the mode will match the type used in the next step
         if target.mode != "RGB":
             target = target.convert("RGB")
         # Compare the resulting images by the total average pixel difference
-        result = self.render_pattern(only_pattern=True, crop=True).convert("RGB")
+        result = self.render_pattern(spot_masks, sprite_mask, only_pattern=True, crop=True).convert("RGB")
         diff = ImageChops.difference(target, result)
         total_diff = 0
         for n, (r, g, b) in diff.getcolors():  # gives a list of counter and RGB values in the image
