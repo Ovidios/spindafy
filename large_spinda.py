@@ -1,5 +1,6 @@
 from PIL import Image
 from spinda_optimizer import evolve
+from spindafy import *
 import json, PIL.ImageOps
 
 # this is definitely not the best way of doing this!
@@ -26,13 +27,13 @@ def to_spindas(filename, pop, n_generations, invert = False):
                     y*20+33
                 ))
                 (_, best_spinda) = evolve(sub_target, pop, n_generations)
-                spinmage = best_spinda.render_pattern()
+                spinmage = render_pattern(best_spinda)
                 img.paste(
                     spinmage,
                     (x * 25, y * 20),
                     spinmage
                 )
-                pids[y] += [best_spinda.get_personality()]
+                pids[y] += [get_personality(best_spinda)]
 
         return (img, pids)
     
