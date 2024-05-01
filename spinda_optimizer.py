@@ -3,6 +3,7 @@ import config
 from random import choice, random, randint
 import multiprocessing, numpy as np
 from itertools import repeat, starmap
+from numba import cuda
 
 PREDEFINED = {
     "ALL_WHITE": 0x393d9888,
@@ -47,7 +48,10 @@ def evolve_step(target, population):
     if config.USE_GPU:
         # From my testing, using one CPU makes it faster. I'm guessing the time spent copying memory
         # around is too slow in comparison to the gains from calculating Spinda result images.
-        pop_fitness = get_difference_gpu(population, target)
+        tdata = np.array(target.getdata())
+        length = len(tdata)
+        tdata = cuda.to_device(tdata)
+        pop_fitness = get_difference_gpu(population, tdata, length)
     else:
         pool = multiprocessing.Pool(processes=cpus)
         pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))

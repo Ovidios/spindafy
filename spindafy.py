@@ -92,16 +92,13 @@ def get_difference(spinda, target):
     return total_diff
 
 
-def get_difference_gpu(spindas, target):
+def get_difference_gpu(spindas, tdata, length):
     # Compare the resulting images by the total average pixel difference
     difference_tuples = []
     for spinda in spindas:
         result = render_pattern(spinda, only_pattern=True, crop=True).convert("RGB")
-        tdata = np.array(target.getdata())
         rdata = np.array(result.getdata())
-        length = len(tdata)
         diffs = np.zeros(length, dtype=np.int32)
-        tdata = cuda.to_device(tdata)
         rdata = cuda.to_device(rdata)
         diffs = cuda.to_device(diffs)
         get_difference_direct[128, 1024](tdata, rdata, diffs)
