@@ -1,6 +1,8 @@
 from PIL import Image, ImageChops, ImageDraw
 from random import randint
 import numpy as np
+from numba import cuda
+import config
 
 class SpindaConfig:
     sprite_base = Image.open("res/spinda_base.png")
@@ -27,7 +29,7 @@ class SpindaConfig:
 
     def __str__(self):
         return f"<SpindaConfig> {self.spots}"
-    
+
     @staticmethod
     def from_personality(pers):
         self = SpindaConfig()
@@ -36,7 +38,7 @@ class SpindaConfig:
         self.spots[2] = ((pers & 0x000f0000) >> 16, (pers & 0x00f00000) >> 20)
         self.spots[3] = ((pers & 0x0f000000) >> 24, (pers & 0xf0000000) >> 28)
         return self
-    
+
     @staticmethod
     def random():
         return SpindaConfig.from_personality(randint(0, 0x100000000))
@@ -93,6 +95,31 @@ class SpindaConfig:
         for n, (r, g, b) in diff.getcolors():  # gives a list of counter and RGB values in the image
             total_diff += n*((r+g+b)/3)
         return total_diff
+
+def get_differences_gpu(spindas, tdata, length):
+    # Compare the resulting images by the total average pixel difference
+    difference_tuples = []
+    for spinda in spindas:
+        result = spinda.render_pattern(only_pattern=True, crop=True).convert("RGB")
+        rdata = np.array(result.getdata())
+        diffs = np.zeros(length, dtype=np.uint64)
+        rdata = cuda.to_device(rdata)
+        diffs = cuda.to_device(diffs)
+        get_difference_direct[int(length / 1024) + 1, 1024](tdata, rdata, diffs)
+        difference_tuples.append((spinda, sum_reduce(diffs)))
+    return difference_tuples
+
+
+@cuda.reduce
+def sum_reduce(a, b):
+    return a + b
+
+@cuda.jit
+def get_difference_direct(tdata, rdata, diffs):
+    index = cuda.grid(1)
+    tr, tg, tb = tdata[index]
+    rr, rg, rb = rdata[index]
+    diffs[index] = (abs(tr - rr) + abs(tg - rg) + abs(tb - rb)) / 3
 
 if __name__ == "__main__":
     spin = SpindaConfig.from_personality(0x7a397866)

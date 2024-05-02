@@ -1,8 +1,10 @@
+import config
 from PIL import Image
-from spindafy import SpindaConfig
+from spindafy import SpindaConfig, get_differences_gpu
 from random import choice, random, randint
 import multiprocessing, numpy as np
 from itertools import repeat, starmap
+from numba import cuda
 
 PREDEFINED = {
     "ALL_WHITE": 0x393d9888,
@@ -41,8 +43,18 @@ def get_pop_fitness(spinda, target):
     return (spinda, spinda.get_difference(target))
 
 def evolve_step(target, population):
-    pool = multiprocessing.Pool(processes=cpus)
-    pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
+    if config.USE_GPU:
+        # One CPU is used here, since under Windows, multiprocessing incurs a lot of slowdown, which
+        # doesn't happen under Linux normally, but now does due to the GPU being involved.
+        if target.mode != "RGB":  # Convert image now, so we don't convert every time in get_difference_gpu
+            target = target.convert("RGB")
+        tdata = np.array(target.getdata())
+        length = len(tdata)
+        tdata = cuda.to_device(tdata)
+        pop_fitness = get_differences_gpu(population, tdata, length)
+    else:
+        pool = multiprocessing.Pool(processes=cpus)
+        pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
     #pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
     pop_fitness = sorted(pop_fitness, key=lambda t: t[1])
     (best_spinda, best_fitness) = pop_fitness[0]
