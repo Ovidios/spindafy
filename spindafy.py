@@ -1,6 +1,7 @@
 from PIL import Image, ImageChops
 from random import randint
 from timeify import timeify
+import numpy as np
 
 class SpindaConfig:
     sprite_base = Image.open("res/spinda_base.png")
@@ -84,24 +85,19 @@ class SpindaConfig:
         if crop:
             img = img.crop((17, 15, 52, 48))
 
-        return img
+        return img    
 
-    # @timeify
     def get_difference(self, target, spot_masks, sprite_mask):
-        # Validate the mode will match the type used in the next step
-        if target.mode != "RGB":
-            target = target.convert("RGB")
-        # Compare the resulting images by the total average pixel difference
-        result = self.render_pattern(spot_masks, sprite_mask, only_pattern=True, crop=True).convert("RGB")
-        diff = ImageChops.difference(target, result)
+        # if target.mode != "L":
+        #     target = target.convert("L")
+        result = self.render_pattern(spot_masks, sprite_mask, only_pattern=True, crop=True).convert("L")
+        target_np = np.array(target)
+        result_np = np.array(result)
 
-        total_diff = 0
-        color_diff = diff.getcolors()
-        if color_diff is None:
-            return total_diff
-        
-        for n, (r, g, b) in color_diff:  # gives a list of counter and RGB values in the image
-            total_diff += n*((r+g+b)/3)
+        # Compute absolute difference
+        diff = np.abs(target_np - result_np)
+        total_diff = np.sum(diff) / diff.size  # Normalize by the number of elements
+
         return total_diff
 
 if __name__ == "__main__":

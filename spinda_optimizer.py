@@ -71,7 +71,7 @@ def evolve_step(target, population, elitism_count=2):
 
     return (new_pop, best_fitness, best_spinda)
 
-@timeify
+# @timeify
 def evolve(target, pop, n_generations, include = []):
 
     # check for predefined spinda patterns!
@@ -101,7 +101,7 @@ def evolve(target, pop, n_generations, include = []):
 
 def render_to_spinda(filename, pop, n_generations, include = []) -> Image:
     with Image.open(filename) as target:
-        (_, best_spinda) = evolve(target.convert("RGB"), pop, n_generations)
+        (_, best_spinda) = evolve(target.convert("L"), pop, n_generations)
         return (best_spinda.render_pattern(), best_spinda)
 
 if __name__ == "__main__":
