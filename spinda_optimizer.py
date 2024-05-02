@@ -44,8 +44,8 @@ def get_pop_fitness(spinda, target):
 
 def evolve_step(target, population):
     if config.USE_GPU:
-        # From my testing, using one CPU makes it faster. I'm guessing the time spent copying memory
-        # around is too slow in comparison to the gains from calculating Spinda result images.
+        # One CPU is used here, since under Windows, multiprocessing incurs a lot of slowdown, which
+        # doesn't happen under Linux normally, but now does due to the GPU being involved.
         if target.mode != "RGB":  # Convert image now, so we don't convert every time in get_difference_gpu
             target = target.convert("RGB")
         tdata = np.array(target.getdata())
