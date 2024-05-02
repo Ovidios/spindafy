@@ -98,10 +98,10 @@ def get_difference_gpu(spindas, tdata, length):
     for spinda in spindas:
         result = render_pattern(spinda, only_pattern=True, crop=True).convert("RGB")
         rdata = np.array(result.getdata())
-        diffs = np.zeros(length, dtype=np.int32)
+        diffs = np.zeros(length, dtype=np.uint64)
         rdata = cuda.to_device(rdata)
         diffs = cuda.to_device(diffs)
-        get_difference_direct[128, 1024](tdata, rdata, diffs)
+        get_difference_direct[int(length / 1024) + 1, 1024](tdata, rdata, diffs)
         difference_tuples.append((spinda, sum_reduce(diffs)))
     return difference_tuples
 

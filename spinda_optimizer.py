@@ -42,12 +42,11 @@ def get_pop_fitness(spinda, target):
     return (spinda, get_difference(spinda, target))
 
 def evolve_step(target, population):
-    # Convert now, since GPUs don't support anything in PIL/Pillow
-    if target.mode != "RGB":
-        target = target.convert("RGB")
     if config.USE_GPU:
         # From my testing, using one CPU makes it faster. I'm guessing the time spent copying memory
         # around is too slow in comparison to the gains from calculating Spinda result images.
+        if target.mode != "RGB":  # Convert image now, so we don't convert every time in get_difference_gpu
+            target = target.convert("RGB")
         tdata = np.array(target.getdata())
         length = len(tdata)
         tdata = cuda.to_device(tdata)
