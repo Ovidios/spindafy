@@ -43,7 +43,7 @@ if __name__ == '__main__':
             print("frame already found! skipping.")
             continue
 
-        (img, pids) = to_spindas(filename, POPULATION, GENERATIONS)
+        (img, pids) = to_spindas(filename, POPULATION, GENERATIONS, invert=True)
 
         output_filename = args.output_directory + f"/frame{n:0>4}.png"
         img.save(output_filename)

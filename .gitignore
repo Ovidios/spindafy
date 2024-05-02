@@ -1,0 +1,5 @@
+*.pyc
+/res/test
+/res/doom_frames
+/res/doom_frames_spinda
+*.mp4
