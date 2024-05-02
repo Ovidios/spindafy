@@ -17,6 +17,6 @@ if __name__ == "__main__":
     img = img.resize((img.width*args.scale, img.height*args.scale), Image.Resampling.NEAREST)
 
     if args.save:
-        img.save(hex(get_personality(config)) + ".png")
+        img.save(hex(config.get_personality()) + ".png")
     if args.show or not args.save:
         img.show()

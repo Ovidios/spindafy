@@ -2,7 +2,6 @@ from glob import glob
 from pathlib import Path
 from argparse import ArgumentParser
 from spinda_optimizer import evolve
-from spindafy import *
 from PIL import Image
 
 if __name__ == '__main__':
@@ -29,7 +28,7 @@ if __name__ == '__main__':
             target = input_image.convert("RGB")
 
             (fitness, spinda) = evolve(target, 250, 25)
-            spinmage = render_pattern(spinda)
+            spinmage = spinda.render_pattern()
 
-            output_filename = args.output_directory + f"/frame{n:0>4}_{hex(get_personality(spinda))}.png"
+            output_filename = args.output_directory + f"/frame{n:0>4}_{hex(spinda.get_personality())}.png"
             spinmage.save(output_filename)

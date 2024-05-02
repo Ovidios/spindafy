@@ -1,1 +1,1 @@
-USE_GPU = True
+USE_GPU = False

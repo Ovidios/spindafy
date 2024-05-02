@@ -1,5 +1,6 @@
-from spindafy import *
 import config
+from PIL import Image
+from spindafy import SpindaConfig, get_differences_gpu
 from random import choice, random, randint
 import multiprocessing, numpy as np
 from itertools import repeat, starmap
@@ -18,15 +19,15 @@ except NotImplementedError:
 def create_offspring(parent1, parent2):
     MUTATION_PROB = 0.2
     
-    offspring = empty_spinda()
+    offspring = SpindaConfig()
     
     for n in range(4):
         # recombination
-        offspring[n] = choice((parent1, parent2))[n]
+        offspring.spots[n] = choice((parent1, parent2)).spots[n]
 
         # very basic mutation!!
         if random() <= MUTATION_PROB:
-            offspring[n] = (randint(0, 15), randint(0, 15))
+            offspring.spots[n] = (randint(0, 15), randint(0, 15))
 
     return offspring
 
@@ -39,7 +40,7 @@ def generate_parents(pop_fitness):
     return (parent_1[0], parent_2[0])
 
 def get_pop_fitness(spinda, target):
-    return (spinda, get_difference(spinda, target))
+    return (spinda, spinda.get_difference(target))
 
 def evolve_step(target, population):
     if config.USE_GPU:
@@ -50,7 +51,7 @@ def evolve_step(target, population):
         tdata = np.array(target.getdata())
         length = len(tdata)
         tdata = cuda.to_device(tdata)
-        pop_fitness = get_difference_gpu(population, tdata, length)
+        pop_fitness = get_differences_gpu(population, tdata, length)
     else:
         pool = multiprocessing.Pool(processes=cpus)
         pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
@@ -69,16 +70,16 @@ def evolve(target, pop, n_generations, include = []):
     # check for predefined spinda patterns!
     black_target = [127, 127, 127, 255] if target.mode == "RBGA" else 127
     if np.all(np.greater_equal(target, 128)):
-        best_spinda = from_personality(PREDEFINED["ALL_WHITE"])
-        print(f"Found predefined Spinda: 'ALL_WHITE': {hex(get_personality(best_spinda))}")
-        return (get_difference(best_spinda, target), best_spinda)
+        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
+        print(f"Found predefined Spinda: 'ALL_WHITE': {hex(best_spinda.get_personality())}")
+        return (best_spinda.get_difference(target), best_spinda)
     if np.all(np.less_equal(target, black_target)):
-        best_spinda = from_personality(PREDEFINED["ALL_BLACK"])
-        print(f"Found predefined Spinda: 'ALL_BLACK': {hex(get_personality(best_spinda))}")
-        return (get_difference(best_spinda, target), best_spinda)
+        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
+        print(f"Found predefined Spinda: 'ALL_BLACK': {hex(best_spinda.get_personality())}")
+        return (best_spinda.get_difference(target), best_spinda)
         
     # create a population of spinda
-    population = [random_spinda() for _ in range(pop - len(include))]
+    population = [SpindaConfig.random() for _ in range(pop - len(include))]
     # insert prepopulation
     for spinda in include: population.append(spinda)
 
@@ -87,7 +88,7 @@ def evolve(target, pop, n_generations, include = []):
     # run evolution
     for gen in range(n_generations):
         (population, best_fitness, best_spinda) = evolve_step(target, population)
-        print(f"Generation #{gen} // best: {hex(get_personality(best_spinda))} ({best_fitness})")
+        print(f"Generation #{gen} // best: {hex(best_spinda.get_personality())} ({best_fitness})")
     
     return (best_fitness, best_spinda)
 
