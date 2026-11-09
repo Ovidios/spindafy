@@ -3,12 +3,6 @@ from pathlib import Path
 from argparse import ArgumentParser
 from spinda_optimizer import evolve
 from PIL import Image
-import multiprocessing
-
-try:
-    cpus = multiprocessing.cpu_count()
-except NotImplementedError:
-    cpus = 2   # arbitrary default
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -23,7 +17,6 @@ if __name__ == '__main__':
     # create output directory if it doesn't exist
     Path(args.output_directory).mkdir(parents=True, exist_ok=True)
 
-    pool = multiprocessing.Pool(processes=cpus)
     for n, filename in enumerate(inputs):
         print(f"STARTING FRAME #{n:0>4}! — ({n/len(inputs) * 100}%)")
 
@@ -34,7 +27,7 @@ if __name__ == '__main__':
         with Image.open(filename) as input_image:
             target = input_image.convert("RGB")
 
-            (fitness, spinda) = evolve(target, 250, 25, pool)
+            (fitness, spinda) = evolve(target, 250, 25)
             spinmage = spinda.render_pattern()
 
             output_filename = args.output_directory + f"/frame{n:0>4}_{hex(spinda.get_personality())}.png"

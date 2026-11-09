@@ -3,12 +3,6 @@ from pathlib import Path
 from argparse import ArgumentParser
 from large_spinda import to_spindas
 import json
-import multiprocessing
-
-try:
-    cpus = multiprocessing.cpu_count()
-except NotImplementedError:
-    cpus = 2   # arbitrary default
 
 GENERATIONS = 10
 POPULATION = 100
@@ -30,7 +24,6 @@ if __name__ == '__main__':
     Path(args.output_directory).mkdir(parents=True, exist_ok=True)
     Path(args.output_directory + "/pids").mkdir(parents=True, exist_ok=True)
 
-    pool = multiprocessing.Pool(processes=cpus)
     for n, filename in enumerate(inputs):
         print(f"STARTING FRAME #{n:0>4}! — ({n/len(inputs) * 100}%)")
 
@@ -50,7 +43,7 @@ if __name__ == '__main__':
             print("frame already found! skipping.")
             continue
 
-        (img, pids) = to_spindas(filename, POPULATION, GENERATIONS, pool)
+        (img, pids) = to_spindas(filename, POPULATION, GENERATIONS)
 
         output_filename = args.output_directory + f"/frame{n:0>4}.png"
         img.save(output_filename)

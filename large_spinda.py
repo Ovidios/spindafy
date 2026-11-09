@@ -1,15 +1,9 @@
 from PIL import Image
 from spinda_optimizer import evolve
 import json, PIL.ImageOps
-import multiprocessing
-
-try:
-    cpus = multiprocessing.cpu_count()
-except NotImplementedError:
-    cpus = 2   # arbitrary default
 
 # this is definitely not the best way of doing this!
-def to_spindas(filename, pop, n_generations, pool, invert = False):
+def to_spindas(filename, pop, n_generations, invert = False):
     with Image.open(filename) as target:
         target = target.convert("RGB")
         if invert: target = PIL.ImageOps.invert(target)
@@ -31,7 +25,7 @@ def to_spindas(filename, pop, n_generations, pool, invert = False):
                     x*25+35,
                     y*20+33
                 ))
-                (_, best_spinda) = evolve(sub_target, pop, n_generations, pool)
+                (_, best_spinda) = evolve(sub_target, pop, n_generations)
                 spinmage = best_spinda.render_pattern()
                 img.paste(
                     spinmage,
@@ -43,8 +37,7 @@ def to_spindas(filename, pop, n_generations, pool, invert = False):
         return (img, pids)
     
 if __name__ == "__main__":
-    pool = multiprocessing.Pool(processes=cpus)
-    (img, pids) = to_spindas("doom/test.png", 100, 10, pool)
+    (img, pids) = to_spindas("doom/test.png", 100, 10)
     img.resize((img.size[0]*10, img.size[1]*10), Image.Resampling.NEAREST).show()
     img.save("doom/test_res.png")
     with open("doom/test.json", "w") as f:

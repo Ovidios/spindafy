@@ -1,18 +1,13 @@
 from PIL import Image
 from spindafy import SpindaConfig
 from random import choice, random, randint
-import multiprocessing, numpy as np
+import numpy as np
 from itertools import repeat, starmap
 
 PREDEFINED = {
     "ALL_WHITE": SpindaConfig.from_personality(0x393d9888),
     "ALL_BLACK": SpindaConfig.from_personality(0xff200000)
 }
-
-try:
-    cpus = multiprocessing.cpu_count()
-except NotImplementedError:
-    cpus = 2   # arbitrary default
 
 def create_offspring(parent1, parent2):
     MUTATION_PROB = 0.2
@@ -40,8 +35,8 @@ def generate_parents(pop_fitness):
 def get_pop_fitness(spinda, target):
     return (spinda, spinda.get_difference(target))
 
-def evolve_step(target, population, pool):
-    pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
+def evolve_step(target, population):
+    pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
     #pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
     pop_fitness = sorted(pop_fitness, key=lambda t: t[1])
     (best_spinda, best_fitness) = pop_fitness[0]
@@ -53,7 +48,7 @@ def evolve_step(target, population, pool):
         new_pop.append(create_offspring(parent_1, parent_2))
     return (new_pop, best_fitness, best_spinda)
 
-def evolve(target, pop, n_generations, pool, include = []):
+def evolve(target, pop, n_generations, include = []):
     # check for predefined spinda patterns!
     black_target = [127, 127, 127, 255] if target.mode == "RBGA" else 127
     if np.all(np.greater_equal(target, 128)):
@@ -74,15 +69,14 @@ def evolve(target, pop, n_generations, pool, include = []):
 
     # run evolution
     for gen in range(n_generations):
-        (population, best_fitness, best_spinda) = evolve_step(target, population, pool)
+        (population, best_fitness, best_spinda) = evolve_step(target, population)
         print(f"Generation #{gen} // best: {hex(best_spinda.get_personality())} ({best_fitness})")
     
     return (best_fitness, best_spinda)
 
 def render_to_spinda(filename, pop, n_generations, include = []) -> Image:
     with Image.open(filename) as target:
-        pool = multiprocessing.Pool(processes=cpus)
-        (_, best_spinda) = evolve(target.convert("RGB"), pop, n_generations, pool)
+        (_, best_spinda) = evolve(target.convert("RGB"), pop, n_generations)
         return (best_spinda.render_pattern(), best_spinda)
 
 if __name__ == "__main__":
