@@ -1,18 +1,14 @@
 from PIL import Image
 from spindafy import SpindaConfig
 from random import choice, random, randint
-import multiprocessing, numpy as np
+import numpy as np
 from itertools import repeat, starmap
+import bisect
 
 PREDEFINED = {
-    "ALL_WHITE": 0x393d9888,
-    "ALL_BLACK": 0xff200000
+    "ALL_WHITE": SpindaConfig.from_personality(0x393d9888),
+    "ALL_BLACK": SpindaConfig.from_personality(0xff200000)
 }
-
-try:
-    cpus = multiprocessing.cpu_count()
-except NotImplementedError:
-    cpus = 2   # arbitrary default
 
 def create_offspring(parent1, parent2):
     MUTATION_PROB = 0.2
@@ -41,10 +37,9 @@ def get_pop_fitness(spinda, target):
     return (spinda, spinda.get_difference(target))
 
 def evolve_step(target, population):
-    pool = multiprocessing.Pool(processes=cpus)
-    pop_fitness = pool.starmap(get_pop_fitness, zip(population, repeat(target)))
-    #pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
-    pop_fitness = sorted(pop_fitness, key=lambda t: t[1])
+    pop_fitness = []
+    for spinda in population:
+        bisect.insort(pop_fitness, get_pop_fitness(spinda, target), key=lambda t: t[1])
     (best_spinda, best_fitness) = pop_fitness[0]
     pop = len(population)
 
@@ -58,12 +53,12 @@ def evolve(target, pop, n_generations, include = []):
     # check for predefined spinda patterns!
     black_target = [127, 127, 127, 255] if target.mode == "RBGA" else 127
     if np.all(np.greater_equal(target, 128)):
-        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
-        print(f"Found predefined Spinda: 'ALL_WHITE': {hex(best_spinda.get_personality())}")
+        best_spinda = PREDEFINED["ALL_WHITE"]
+        print("Found predefined Spinda: 'ALL_WHITE': 0x393d9888")
         return (best_spinda.get_difference(target), best_spinda)
     if np.all(np.less_equal(target, black_target)):
-        best_spinda = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
-        print(f"Found predefined Spinda: 'ALL_BLACK': {hex(best_spinda.get_personality())}")
+        best_spinda = PREDEFINED["ALL_BLACK"]
+        print("Found predefined Spinda: 'ALL_BLACK': 0xff200000")
         return (best_spinda.get_difference(target), best_spinda)
         
     # create a population of spinda

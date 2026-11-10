@@ -49,7 +49,7 @@ class SpindaConfig:
 
     def render_pattern(self, only_pattern = False, crop = False):
         # Prepare a result image with the same size as base and bg either black or transparent
-        size = self.sprite_base.size
+        size = (52-17, 48-15) if crop else self.sprite_base.size
         img = Image.new('RGBA', size, (0, 0, 0, 255 if only_pattern else 0))
 
         # When wanting an actual spinda, start by pasting in the base sprite
@@ -60,6 +60,8 @@ class SpindaConfig:
             # Calculate the top-left coordinate for the spot image
             position = (self.spot_offsets[index][0] + self.spots[index][0],
                         self.spot_offsets[index][1] + self.spots[index][1])
+            if crop:
+                position = (position[0] - 17, position[1] - 15)
 
             # Create a full-size image for the full spot at the desired position,
             #   as composite operation requires same-sized images
@@ -68,7 +70,10 @@ class SpindaConfig:
 
             # Create temporary mask by combining mask and spot mask
             temp_mask = Image.new('RGBA', size, (0, 0, 0, 0))
-            temp_mask.paste(self.sprite_mask, (0, 0), mask=spot_full)
+            if crop:
+                temp_mask.paste(self.sprite_mask.crop((17, 15, 52, 48)), (0, 0), mask=spot_full)
+            else:
+                temp_mask.paste(self.sprite_mask, (0, 0), mask=spot_full)
 
             if only_pattern:
                 # Composite the white spot onto the masked area
@@ -76,9 +81,6 @@ class SpindaConfig:
 
             # Composite the new mask with the current result
             img = Image.composite(temp_mask, img, temp_mask)
-
-        if crop:
-            img = img.crop((17, 15, 52, 48))
 
         return img
 
