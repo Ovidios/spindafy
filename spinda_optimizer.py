@@ -3,6 +3,7 @@ from spindafy import SpindaConfig
 from random import choice, random, randint
 import numpy as np
 from itertools import repeat, starmap
+import bisect
 
 PREDEFINED = {
     "ALL_WHITE": SpindaConfig.from_personality(0x393d9888),
@@ -36,9 +37,9 @@ def get_pop_fitness(spinda, target):
     return (spinda, spinda.get_difference(target))
 
 def evolve_step(target, population):
-    pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
-    #pop_fitness = starmap(get_pop_fitness, zip(population, repeat(target)))
-    pop_fitness = sorted(pop_fitness, key=lambda t: t[1])
+    pop_fitness = []
+    for spinda in population:
+        bisect.insort(pop_fitness, get_pop_fitness(spinda, target), key=lambda t: t[1])
     (best_spinda, best_fitness) = pop_fitness[0]
     pop = len(population)
 
